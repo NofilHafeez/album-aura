@@ -3,13 +3,13 @@ import { Facebook, Twitter, Instagram } from 'lucide-react';
 
 const Footer = () => {
   return (
-    <footer className="w-full bg-gray-900 text-white py-10 px-10 flex flex-col md:flex-row justify-between items-center">
+    <footer className="w-full bg-gray-900 text-white py-10 px-8 flex flex-col md:flex-row justify-between items-center mt-auto">
       {/* Website Name */}
-      <h1 className="text-xl font-bold">AlbumAura</h1>
+      <h1 className="text-xl font-bold mb-4 md:mb-0 text-center md:text-left">AlbumAura</h1>
 
       {/* Contact Info & Social Media */}
-      <div className="flex flex-col md:flex-row items-center gap-4">
-        <div className="text-sm text-gray-300">
+      <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+        <div className="text-sm text-gray-300 text-center md:text-left">
           <p>Email: contact@albumaura.com</p>
           <p>Phone: +123 456 7890</p>
         </div>

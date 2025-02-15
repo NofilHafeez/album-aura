@@ -13,14 +13,15 @@ const Navbar: React.FC = () => {
   return (
     <nav className="w-full px-10 py-4 flex items-center justify-between bg-gradient-to-r from-gray-900 to-gray-800 shadow-lg fixed top-0 z-50">
       {/* Logo */}
-      <motion.h1
+      <motion.a
+        href="/"
         className="text-2xl font-extrabold text-white tracking-wide"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
       >
         AlbumAura
-      </motion.h1>
+      </motion.a>
 
       {/* Mobile Menu Icon */}
       <div className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
