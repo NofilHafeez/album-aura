@@ -40,7 +40,7 @@ const MainPage = () => {
               height={300}
               className="w-full h-72 object-cover rounded-t-xl"
             />
-            <div className="p-5 flex justify-between items-center text-white rounded-b-xl">
+            <div className="p-5 flex justify-between items-center bg-gray-800 text-white rounded-b-xl">
               <h2 className="text-lg font-semibold">{photographer.name}</h2>
               <button className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all shadow-md">
                 View Collection
