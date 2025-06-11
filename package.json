@@ -10,17 +10,24 @@
   },
   "dependencies": {
     "@sanity/image-url": "^1.1.0",
-    "@sanity/vision": "^3.75.0",
+    "@sanity/vision": "^3.90.0",
+    "axios": "^1.9.0",
+    "bcryptjs": "^3.0.2",
+    "cookies-parser": "^1.2.0",
     "framer-motion": "^12.4.3",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.475.0",
     "next": "14.2.18",
-    "next-sanity": "^9.8.57",
+    "next-sanity": "^9.12.0",
     "react": "^18",
     "react-dom": "^18",
-    "sanity": "^3.75.0",
-    "styled-components": "^6.1.15"
+    "react-is": "^19.1.0",
+    "sanity": "^3.90.0",
+    "styled-components": "^6.1.18",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

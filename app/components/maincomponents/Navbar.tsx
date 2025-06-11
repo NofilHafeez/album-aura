@@ -1,21 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Menu } from "lucide-react";
-import Image from "next/image";
+import { Menu, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/UserContext";
 
 const Navbar: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const { user, setUser } = useAuth();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
-  const [profileOpen, setProfileOpen] = useState<boolean>(false);
+  const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const isLoggedIn = !!user;  // much cleaner
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    if (dropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownOpen]);
+
+  const handleLogout = async () => {  
+    try {
+      const response = await fetch("/api/logout", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        setUser(null);
+        router.push("/login");
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
-    <nav className="w-full px-10 py-4 flex items-center justify-between bg-gradient-to-r from-gray-900 to-gray-800 shadow-lg fixed top-0 z-50">
+    <nav className="w-full px-10 py-3 flex items-center justify-between border-b-2 bg-black fixed top-0 z-50">
       {/* Logo */}
       <motion.a
-        href="/"
-        className="text-2xl font-extrabold text-white tracking-wide"
+        onClick={() => router.push("/")}
+        className='text-3xl font-["Brush_Script_MT"] text-white tracking-wide cursor-pointer'
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
@@ -28,49 +65,61 @@ const Navbar: React.FC = () => {
         <Menu className="text-white w-6 h-6 cursor-pointer" />
       </div>
 
-      {/* Profile & CTA */}
+      {/* Right side menu */}
       <div
-        className={`md:flex items-center gap-6 ${menuOpen ? "flex" : "hidden"} absolute md:relative top-16 md:top-0 left-0 w-full md:w-auto bg-gray-900 md:bg-transparent p-4 md:p-0 md:flex-row flex-col md:items-center`}
+        className={`md:flex items-center gap-6 ${menuOpen ? "flex" : "hidden"} absolute md:relative top-16 md:top-0 left-0 w-full md:w-auto bg-gray-900 md:bg-transparent p-4 md:p-0 flex-col md:flex-row`}
       >
-        <div
-          className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer"
-          onMouseEnter={() => setProfileOpen(true)}
-          onMouseLeave={() => setProfileOpen(false)}
-        >
-          <Image
-            className="w-full h-full object-cover"
-            src=""
-            alt="Profile"
-            width={48}
-            height={48}
-          />
-          {/* Dropdown Menu */}
-          {profileOpen && (
-            <div className="absolute right-10 mt-2 w-40 bg-white text-black rounded-lg ">
-              <button className="block w-full text-left px-4 py-2 hover:bg-red-700">Dashboard</button>
-            </div>
-          )}
-        </div>
-        
         {isLoggedIn ? (
-          <button
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-xl shadow-md transition-all"
-            onClick={() => setIsLoggedIn(false)}
-          >
-            Logout
-          </button>
+          <>
+            {/* Username display */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                className="text-white px-4 py-2"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                Hey, {user?.name || "User"} lets create! <ArrowRight className="inline-block" size={20} />
+              </button>
+
+              {/* Dropdown */}
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-3 w-48 bg-black text-white rounded-lg shadow-lg z-50">
+                  <button
+                    className="block w-full text-left px-4 py-2 border-gray-100 border-2 hover:bg-zinc-700"
+                    onClick={() => router.push("/dashboard")}
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    className="block w-full text-left px-4 py-2 border-gray-100 border-x-2 border-b-2 hover:bg-zinc-700"
+                    onClick={() => router.push("/collection")}
+                  >
+                    Create Collection
+                  </button>
+                  <button
+                    className="block w-full text-left border-gray-100 border-x-2 border-b-2 px-4 py-2 hover:bg-red-100 text-red-600"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
         ) : (
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-1 rounded-lg shadow-md transition-all"
-            onClick={() => setIsLoggedIn(true)}
-          >
-            Login
-          </button>
-        )}
-        
-        {/* Dashboard button in mobile menu */}
-        {menuOpen && (
-          <button className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg shadow-md transition-all mt-2 w-full text-left">Dashboard</button>
+          <>
+            <button
+              className="border-white border-[1px] text-white px-4 py-1 shadow-md transition-all"
+              onClick={() => router.push("/login")}
+            >
+              Login
+            </button>
+            <button
+              className="border-white border-[1px] text-white px-4 py-1 shadow-md transition-all"
+              onClick={() => router.push("/signup")}
+            >
+              Sign Up
+            </button>
+          </>
         )}
       </div>
     </nav>

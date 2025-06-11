@@ -26,6 +26,7 @@ const FullscreenGallery = () => {
                 alt={`Image ${index + 1}`}
                 layout="fill"
                 objectFit="cover"
+                loading="lazy"
                 className="transition-transform duration-300 ease-in-out group-hover:scale-105"
               />
             </div>

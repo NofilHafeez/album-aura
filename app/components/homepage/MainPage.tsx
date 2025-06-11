@@ -1,88 +1,190 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search } from "lucide-react"; // Import search icon
-import { ArrowRight } from 'lucide-react';
-
 import Image from "next/image";
+import { Search, ArrowRight } from "lucide-react";
 
-interface Photographer {
-  id: number;
+// User interface
+interface User {
   name: string;
-  imageUrl: string;
+  image?: string;
 }
 
-const photographersData: Photographer[] = [
-  { id: 1, name: "John Doe", imageUrl: "https://plus.unsplash.com/premium_photo-1683140431958-31505d0fd1ff?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
-  { id: 2, name: "Jane Smith", imageUrl: "https://plus.unsplash.com/premium_photo-1683140431958-31505d0fd1ff?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
-  { id: 3, name: "Emily Johnson", imageUrl: "https://plus.unsplash.com/premium_photo-1683140431958-31505d0fd1ff?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
-  { id: 4, name: "Michael Brown", imageUrl: "https://plus.unsplash.com/premium_photo-1661859079243-24150b97a737?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
-  { id: 5, name: "Sarah Williams", imageUrl: "https://plus.unsplash.com/premium_photo-1683140431958-31505d0fd1ff?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
-  { id: 6, name: "David Wilson", imageUrl: "https://plus.unsplash.com/premium_photo-1683140431958-31505d0fd1ff?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
-  { id: 7, name: "Emma Thomas", imageUrl: "https://plus.unsplash.com/premium_photo-1683140431958-31505d0fd1ff?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
-  { id: 8, name: "Olivia Martinez", imageUrl: "https://plus.unsplash.com/premium_photo-1683140431958-31505d0fd1ff?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" }
-];
+// Collection interface
+interface Collection {
+  _id: string;
+  collectionName: string;
+  images: (string | { url: string })[];
+  user: User;
+}
 
-const MainPage = () => {
-  const [photographers, setPhotographers] = useState<Photographer[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>("");
+// Flattened image interface for search and display
+interface FlatImage {
+  id: string;
+  title: string;
+  url: string; 
+  user: User;
+}
 
+export default function PinterestPage() {
+  const [search, setSearch] = useState("");
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
+    const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 20;
+
+  // Fetch public collections from API
   useEffect(() => {
-    setPhotographers(photographersData);
-  }, []);
+    const fetchPublicCollections = async () => {
+      try {
+        const res = await fetch(`/api/get-public-coll?page=${page}&limit=${limit}`);
+        const data = await res.json();
 
-  // Filter photographers based on search input
-  const filteredPhotographers = photographers.filter((photographer) =>
-    photographer.name.toLowerCase().includes(searchQuery.toLowerCase())
+         if (Array.isArray(data.collections)) {
+        setCollections(data.collections);
+        setTotalPages(Math.ceil(data.totalCount / limit));
+        } else {
+          console.error("Unexpected data format:", data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch collections:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPublicCollections();
+  }, [page]);
+
+  // Flatten collections for displaying cover images
+  const allImages: FlatImage[] = collections
+    .map((collection) => {
+      const firstImg = collection.images[0];
+      if (!firstImg) return null;
+
+      return {
+        id: `${collection._id}-0`,
+        title: collection.collectionName,
+        url: typeof firstImg === "string" ? firstImg : firstImg.url,
+        user: collection.user,
+      };
+    })
+    .filter(Boolean) as FlatImage[];
+
+  const filteredImages = allImages.filter((img) =>
+    img.title.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="container text-black mx-auto py-24 px-10">
-      <div className="flex justify-between items-center mb-10">
-        <h1 className="text-4xl font-bold text-white">GALLERY</h1>
-
-        {/* Search Bar (Top Right) */}
-        <div className="relative w-64">
+    <div className="min-h-screen px-4 py-8 bg-black text-white">
+      {/* Search */}
+      <div className="flex flex-col items-center justify-center mb-8">
+        <div className="w-full px-20 pb-10 pt-28 text-center">
+          <h1 className="text-3xl font-bold mb-1">SEARCH THE PROFESSIONALS</h1>
+          <p className="text-sm text-gray-300">Get unique, expert, and experienced photographers</p>
+        </div>
+        <div className="relative mb-5 w-full max-w-md">
           <input
             type="text"
-            placeholder="Search..."
-            className="w-full pl-10 pr-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search collections..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 rounded-md bg-neutral-800 text-white placeholder:text-gray-400 focus:outline-none"
           />
-          <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+          <Search className="absolute top-2.5 left-3 text-gray-400" size={18} />
         </div>
       </div>
 
-      {/* Photographers Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-9">
-        {filteredPhotographers.length > 0 ? (
-          filteredPhotographers.map((photographer) => (
+      {/* Masonry layout */}
+      {loading ? (
+        <p className="text-center text-gray-400">Loading collections...</p>
+      ) : (
+        <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+          {filteredImages.map((image) => (
             <div
-              key={photographer.id}
-              className="relative group overflow-hidden transition-transform transform hover:scale-105 hover:cursor-pointer"
+              key={image.id}
+              className="relative group break-inside-avoid overflow-hidden rounded-xl shadow-md cursor-pointer"
+              onClick={() => {
+                const collection = collections.find(col => col._id === image.id.split("-")[0]);
+                if (collection) setSelectedCollection(collection);
+              }}
             >
               <Image
-                src={photographer.imageUrl}
-                alt={photographer.name}
-                width={500}
-                height={300}
-                className="w-full h-[400px] rounded-md object-cover object-center"
+                src={image.url}
+                alt={image.title}
+                width={300}
+                height={500}
+                className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
               />
-              <div className="pt-2 flex justify-between items-center text-white">
-                <h2 className="text-lg font-semibold">{photographer.name}</h2>
-                <button className="text-blue-600 rounded-lg transition-all shadow-md">
-                  <a href="/view" className="flex gap-2"><h1>View All</h1> <div><ArrowRight className="text-sm" /></div></a>
-                </button>
+
+              {/* Hover Overlay */}
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-white text-lg font-semibold">
+                View <ArrowRight className="ml-2" size={18} />
               </div>
+
+              {/* User Info on Hover */}
+              {image.user && (
+                <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 bg-black bg-opacity-60 px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <span className="text-sm font-medium">{image.user?.name || "Unknown"}</span>
+                </div>
+              )}
             </div>
-          ))
-        ) : (
-          <p className="text-center text-gray-400 col-span-full">No photographers found.</p>
-        )}
+          ))}
+        </div>
+      )}
+
+      {/* Modal Overlay for Full Collection */}
+      {selectedCollection && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="relative w-full  rounded-lg p-6 overflow-y-auto h-screen">
+            <button
+              className="absolute top-4 right-4 text-white text-2xl"
+              onClick={() => setSelectedCollection(null)}
+            >
+              &times;
+            </button>
+
+            <h2 className="text-2xl font-bold mb-4">{selectedCollection.collectionName}</h2>
+
+            <div className="flex justify-between flex-wrap gap-4">
+  {selectedCollection.images.map((img: any, index: number) => (
+    <div key={index} className="w-[300px] h-auto overflow-hidden rounded-md">
+      <Image
+        src={typeof img === "string" ? img : img.url}
+        alt={`Image ${index + 1}`}
+        width={300}
+        height={500}
+        className="object-cover w-full h-full"
+      />
+    </div>
+  ))}
+</div>
+
+          </div>
+        </div>
+      )}
+         {/* Pagination */}
+      <div className="flex justify-center items-center mt-20 gap-4">
+        <button
+          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+          disabled={page === 1}
+          className="px-4 py-2 border-2 border-opacity-50 disabled:opacity-50"
+        >
+          Previous
+        </button>
+
+        <span>Page {page} of {totalPages}</span>
+
+        <button
+          onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+          disabled={page === totalPages}
+          className="px-4 py-2 border-2 border-opacity-50 disabled:opacity-50"
+        >
+          Next
+        </button>
       </div>
     </div>
   );
-};
-
-export default MainPage;
+}
